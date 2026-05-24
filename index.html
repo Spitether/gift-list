@@ -73,9 +73,12 @@
   </div>
 
   <script type="module">
-    import { firebaseConfig } from './assets/firebaseConfig.js';
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
-    import { getFirestore, collection, addDoc, serverTimestamp, addDoc as addItemDoc } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+import firebaseConfig from './assets/firebaseConfig.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+import { getFirestore, collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+
+
+    // NOTE: addDoc is used for both list creation and item creation.
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
@@ -158,7 +161,7 @@
         const itemsCol = collection(db, 'lists', listDoc.id, 'items');
         for (const it of items){
           if (!String(it.name || '').trim()) continue;
-          await addItemDoc(itemsCol, {
+          await addDoc(itemsCol, {
             ...it,
             purchased: false,
             claimedBy: null,
