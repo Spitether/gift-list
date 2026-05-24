@@ -172,7 +172,12 @@ import { getFirestore, collection, addDoc, serverTimestamp } from 'https://www.g
         const url = window.location.origin + window.location.pathname + `?list=${encodeURIComponent(listDoc.id)}&mode=owner`;
         shareLink.value = url.replace('&mode=owner', '&mode=view');
         setToast('List created! Opening share link...', 'ok');
-        window.open(url.replace('&mode=owner', '&mode=view'), '_blank');
+        // Show share link immediately on this page too
+        const shareViewUrl = url.replace('&mode=owner', '&mode=view');
+        shareLink.value = shareViewUrl;
+        window.open(shareViewUrl, '_blank');
+        // Also navigate current page so user can see the list right away
+        window.location.href = shareViewUrl;
       } catch (e){
         console.error(e);
         setToast('Failed to create list. Check your Firebase config and Firestore rules.', 'err');
