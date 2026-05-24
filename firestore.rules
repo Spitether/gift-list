@@ -2,10 +2,12 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Lists metadata
+      // Lists metadata
     match /lists/{listId} {
       allow read: if true;
-      allow write: if false; // keep simple for now; owner creation happens via client with admin rules in production
+      allow create: if request.resource.data.ownerName is string;
+      allow update, delete: if false;
+
 
       match /items/{itemId} {
         allow read: if true;
