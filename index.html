@@ -76,12 +76,21 @@
 import firebaseConfig from './assets/firebaseConfig.js';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
 import { getFirestore, collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+    import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 
 
     // NOTE: addDoc is used for both list creation and item creation.
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    async function ensureAuth(){
+      if (auth.currentUser) return auth.currentUser;
+      const res = await signInAnonymously(auth);
+      return res.user;
+    }
+
 
     const itemsForm = document.getElementById('itemsForm');
     const addItemBtn = document.getElementById('addItemBtn');
@@ -106,18 +115,18 @@ import { getFirestore, collection, addDoc, serverTimestamp } from 'https://www.g
             <input name="name" placeholder="e.g., KitchenAid mixer" />
           </div>
           <div>
-            <label>Price</label>
+            <label>Price (optional)</label>
             <input name="price" placeholder="$250" />
           </div>
         </div>
         <div class="row" style="margin-top:12px">
           <div>
-            <label>Link</label>
+            <label>Link (optional)</label>
             <input name="link" placeholder="https://..." />
           </div>
         </div>
         <div style="margin-top:12px">
-          <label>Notes</label>
+          <label>Notes (optional)</label>
           <textarea name="notes" placeholder="Size, color, where to buy..."></textarea>
         </div>
       `;
@@ -142,6 +151,7 @@ import { getFirestore, collection, addDoc, serverTimestamp } from 'https://www.g
     }
 
     createListBtn.addEventListener('click', async () => {
+      await ensureAuth();
       try {
         setToast('', '');
         const ownerName = document.getElementById('ownerName').value.trim() || 'Owner';
@@ -151,6 +161,7 @@ import { getFirestore, collection, addDoc, serverTimestamp } from 'https://www.g
         const items = getItemsFromForm();
 
         const listDoc = await addDoc(collection(db, 'lists'), {
+          ownerUid: auth.currentUser.uid,
           ownerName,
           title: listTitle,
           surpriseMode,
@@ -160,24 +171,28 @@ import { getFirestore, collection, addDoc, serverTimestamp } from 'https://www.g
         // Add items
         const itemsCol = collection(db, 'lists', listDoc.id, 'items');
         for (const it of items){
-          if (!String(it.name || '').trim()) continue;
-          await addDoc(itemsCol, {
-            ...it,
+          const name = String(it.name || '').trim();
+          if (!name) continue;
+          const payload = {
+            name,
+            // Optional fields: only write them if the user provided a value.
+            ...(it.link ? { link: String(it.link).trim() } : {}),
+            ...(it.price ? { price: String(it.price).trim() } : {}),
+            ...(it.notes ? { notes: String(it.notes).trim() } : {}),
             purchased: false,
             claimedBy: null,
             createdAt: serverTimestamp(),
-          });
+          };
+          await addDoc(itemsCol, payload);
         }
 
         const url = window.location.origin + window.location.pathname + `?list=${encodeURIComponent(listDoc.id)}&mode=owner`;
         shareLink.value = url.replace('&mode=owner', '&mode=view');
-        setToast('List created! Opening share link...', 'ok');
         // Show share link immediately on this page too
         const shareViewUrl = url.replace('&mode=owner', '&mode=view');
         shareLink.value = shareViewUrl;
         window.open(shareViewUrl, '_blank');
-        // Also navigate current page so user can see the list right away
-        window.location.href = shareViewUrl;
+        setToast('List created! Share link ready.', 'ok');
       } catch (e){
         console.error(e);
         setToast('Failed to create list. Check your Firebase config and Firestore rules.', 'err');

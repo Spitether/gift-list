@@ -11,6 +11,7 @@ import {
   onSnapshot,
   orderBy,
   query,
+  deleteDoc,
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 const app = initializeApp(firebaseConfig);
@@ -57,13 +58,20 @@ async function addItemsToList({listId, items}){
   const sanitized = await ensureItemDefaults(items);
 
   for (const it of sanitized){
-    if (!it.name) continue;
-    await addDoc(itemsCol, {
-      ...it,
+    const name = String(it.name || '').trim();
+    if (!name) continue;
+
+    const payload = {
+      name,
+      ...(it.link ? { link: String(it.link).trim() } : {}),
+      ...(it.price ? { price: String(it.price).trim() } : {}),
+      ...(it.notes ? { notes: String(it.notes).trim() } : {}),
       purchased: false,
       claimedBy: null,
       createdAt: serverTimestamp(),
-    });
+    };
+
+    await addDoc(itemsCol, payload);
   }
 }
 
@@ -75,21 +83,38 @@ async function bootstrapListPage(){
   }
 
   const viewMode = getQueryParam('mode') || 'view'; // view|owner
-  const username = (el('username')?.value || '').trim();
-
-  // If owner mode, allow showing purchased state depending on surpriseMode.
-  // In surprise mode, owner still should not see claimedBy/purchased.
   const ownerMode = viewMode === 'owner';
+  const ownerToolsEl = el('ownerTools');
+  if (ownerToolsEl) ownerToolsEl.style.display = ownerMode ? 'block' : 'none';
 
   el('shareLink').value = window.location.origin + window.location.pathname + `?list=${encodeURIComponent(listId)}&mode=view`;
 
   const listDocRef = doc(db, 'lists', listId);
+
+  // Auth (anonymous) for owner-only deletes.
+  // We keep view mode public.
+  const { getAuth, signInAnonymously } = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js');
+  const auth = getAuth();
+  let currentUid = null;
+  try {
+    if (ownerMode) {
+      if (!auth.currentUser) {
+        await signInAnonymously(auth);
+      }
+      currentUid = auth.currentUser?.uid || null;
+    }
+  } catch (e) {
+    console.warn('Auth init failed:', e);
+  }
+
+
 
   const itemsQ = query(collection(db, 'lists', listId, 'items'), orderBy('createdAt', 'asc'));
 
   let surpriseMode = false;
   let listTitle = '';
   let ownerName = '';
+  let ownerUid = null;
 
   // Listen list metadata
   const listUnsub = onSnapshot(listDocRef, (snap) => {
@@ -101,10 +126,17 @@ async function bootstrapListPage(){
     surpriseMode = !!data.surpriseMode;
     listTitle = data.title || 'My Gift List';
     ownerName = data.ownerName || 'Owner';
+    ownerUid = data.ownerUid || null;
 
     el('listTitle').textContent = listTitle;
     el('ownerLabel').textContent = ownerName;
     el('surpriseBadge').textContent = surpriseMode ? 'Surprise mode ON' : 'Surprise mode OFF';
+
+    // If owner tools exist, only enable them for the real owner.
+    const ownerTools = el('ownerTools');
+    if (ownerTools && ownerMode) {
+      ownerTools.style.display = currentUid && ownerUid && currentUid === ownerUid ? 'block' : 'none';
+    }
 
     // If surprise mode is ON, hide purchased/claimer info for everyone (including owner).
     // The UI can still show “Claim” buttons for unclaimed items.
@@ -202,10 +234,22 @@ async function bootstrapListPage(){
       `;
 
       bottom.appendChild(claimArea);
+
+      // Owner-only delete for items.
+      if (ownerMode) {
+        const deleteRow = document.createElement('div');
+        deleteRow.style.marginTop = '10px';
+        deleteRow.innerHTML = `
+          <button class="secondary" type="button" data-del-item="${itemId}">Delete item</button>
+        `;
+        bottom.appendChild(deleteRow);
+      }
+
       itemEl.appendChild(top);
       itemEl.appendChild(bottom);
 
       wrap.appendChild(itemEl);
+
 
       // Hook claim button for this item
       const btn = itemEl.querySelector('#claimBtn');
@@ -213,11 +257,54 @@ async function bootstrapListPage(){
       btn.addEventListener('click', () => {
         window.__claimForItem && window.__claimForItem({listId, itemId, purchased, surpriseMode, btn, userInput});
       });
+
+      // Owner delete handler
+      const delBtn = itemEl.querySelector('[data-del-item="' + itemId + '"]');
+      if (delBtn) {
+        delBtn.addEventListener('click', async () => {
+          const ok = confirm('Delete this item?');
+          if (!ok) return;
+          try {
+            await deleteDoc(doc(db, 'lists', listId, 'items', itemId));
+            setToast('Item deleted.', 'ok');
+          } catch (e) {
+            console.error(e);
+            setToast('Could not delete item (owner permissions?).', 'err');
+          }
+        });
+      }
     }
   });
 
+  // Owner delete handler (list)
+  const delListBtn = el('deleteListBtn');
+  if (delListBtn) {
+    delListBtn.disabled = !(ownerMode && currentUid && ownerUid && currentUid === ownerUid);
+    delListBtn.style.cursor = delListBtn.disabled ? 'not-allowed' : 'pointer';
+    delListBtn.addEventListener('click', async () => {
+      const ok = confirm('Delete this entire list? This cannot be undone.');
+      if (!ok) return;
+      try {
+        // Delete items first
+        const { getDocs, getDocsFrom } = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js');
+        const itemsSnap = await getDocs(query(collection(db, 'lists', listId, 'items')));
+        for (const d of itemsSnap.docs) {
+          await deleteDoc(doc(db, 'lists', listId, 'items', d.id));
+        }
+        await deleteDoc(doc(db, 'lists', listId));
+        setToast('List deleted.', 'ok');
+        window.location.href = window.location.pathname + '?mode=owner';
+      } catch (e) {
+        console.error(e);
+        setToast('Could not delete list (owner permissions?).', 'err');
+      }
+    });
+  }
+
   // Expose basic metadata
-  window.__giftList = { listId, ownerMode, surpriseModeRef: () => surpriseMode, listTitle };
+  window.__giftList = { listId, ownerMode, surpriseModeRef: () => surpriseMode, listTitle, ownerUidRef: () => ownerUid };
+
+
 
   // Cleanup if needed
   window.__unsub = () => { listUnsub?.(); itemsUnsub?.(); };

@@ -16,7 +16,7 @@
       <div class="hint">Claim items (no double-buy)</div>
     </header>
 
-    <div class="grid">
+      <div class="grid">
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px">
           <div>
@@ -26,6 +26,9 @@
           <div style="min-width:260px">
             <label>Share link (view mode)</label>
             <input id="shareLink" readonly />
+            <div style="margin-top:10px; display:none" id="ownerTools">
+              <button class="danger" id="deleteListBtn" type="button">Delete list</button>
+            </div>
           </div>
         </div>
 

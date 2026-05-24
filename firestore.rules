@@ -5,28 +5,41 @@ service cloud.firestore {
     // Lists metadata
     match /lists/{listId} {
       allow read: if true;
-      allow create: if request.resource.data.ownerName is string
+      allow create: if request.resource.data.ownerUid is string
+        && request.resource.data.ownerName is string
         && request.resource.data.title is string
         && request.resource.data.surpriseMode is bool;
-      allow update: if request.auth != null;
-      allow delete: if request.auth != null;
+
+      allow update: if request.auth != null && request.auth.uid == resource.data.ownerUid;
+      allow delete: if request.auth != null && request.auth.uid == resource.data.ownerUid;
 
 
       match /items/{itemId} {
         allow read: if true;
 
-        // Claiming: only allow a transition from unclaimed -> claimed by the requester username.
-        // We rely on client to supply claimedBy, but we enforce that it happens only once.
+        // Deleting: only list owner can delete items.
+        allow delete: if request.auth != null && request.auth.uid == get(/databases/$(database)/documents/lists/$(listId)).data.ownerUid;
+
+        // Create items: mandatory `name`, optional `price`, `link`, `notes`.
+        // Firestore doesn't allow open-ended unknown fields in these rules, so we enforce types.
+        allow create: if request.auth != null
+          && request.resource.data.name is string
+          && (request.resource.data.price is string || !("price" in request.resource.data))
+          && (request.resource.data.link is string || !("link" in request.resource.data))
+          && (request.resource.data.notes is string || !("notes" in request.resource.data))
+          && request.resource.data.purchased is bool
+          && request.resource.data.claimedBy == null
+          && request.resource.data.claimedAt == null;
+
+        // Claiming: only allow a transition from unclaimed -> claimed.
         allow update: if request.resource.data.purchased == true
           && resource.data.purchased == false
           && request.resource.data.claimedBy is string
+          && request.resource.data.claimedAt is number
           && request.resource.data.name == resource.data.name
           && request.resource.data.link == resource.data.link
           && request.resource.data.price == resource.data.price
           && request.resource.data.notes == resource.data.notes;
-
-        allow create: if false;
-        allow delete: if false;
       }
     }
   }

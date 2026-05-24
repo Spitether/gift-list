@@ -1,54 +1,29 @@
-# SETUP_WALKTHROUGH.md
+# Firebase Auth (Option 1: anonymous) — setup walkthrough
 
-## Goal: get the site up and shareable
+This app can use Firebase **Anonymous Auth** so anyone can use the site (no passwords) but Firestore rules can still rely on `request.auth != null`.
 
-### 1) Configure Firebase (required)
-1. Open `assets/firebaseConfig.js`.
-2. Replace the empty strings with your Firebase config values:
-   - apiKey
-   - authDomain
-   - projectId
-   - storageBucket
-   - messagingSenderId
-   - appId
+## 1) Enable Firebase Auth
+1. Open: Firebase Console → **Authentication**
+2. Go to **Sign-in method**
+3. Enable **Anonymous**
 
-### 2) Deploy/publish Firestore security rules (required)
-1. Copy `firestore.rules` from this repo.
-2. Firebase Console → Firestore Database → Rules → **Publish**.
+## 2) Add Auth code to the frontend
+We will add:
+- `firebase-auth` import
+- `getAuth()`
+- `signInAnonymously(auth)`
 
-> Important: current rules are minimal and are listed in `TODO.md` as needing hardening (surprise-mode privacy, stronger claim constraints). Do this before relying on privacy guarantees.
+After that, Firestore security rules can safely allow deletes for authenticated users.
 
-### 3) Host the frontend (static)
-You have:
-- `index.html`
-- `list.html`
-- `assets/*`
+## 3) Required Firestore rule model for secure deletes (recommended)
+- When creating a list, we should store `ownerUid` = `user.uid` on the list document.
+- Then rules can allow:
+  - delete only when `request.auth.uid == resource.data.ownerUid`
 
-Deploy these to any free static host (GitHub Pages / Netlify / Cloudflare Pages).
+## 4) Deploy rules
+- After editing `firestore.rules`, go to Firebase Console → Firestore → Rules → **Publish**.
 
-### 4) Local smoke test (recommended)
-Serve locally with a static server (not `file://`), then:
-- open `index.html`
-- create a list
-- open the generated share link
-
-### 5) Functional tests (in this order)
-1. Surprise mode OFF:
-   - claim an item
-   - verify claim shows in the viewer UI
-2. Surprise mode ON:
-   - claim an item
-   - verify owner UI does NOT reveal purchased/claimer info
-
-### 6) Update the to-do list as you finish
-After each step above, mark items as completed in:
-- `TODO.md`
-
----
-
-## Map to `TODO.md`
-- Fill `assets/firebaseConfig.js` → (sets up Firebase config)
-- Publish `firestore.rules` → (deploy rules)
-- Run local smoke test → Verify JS works
-- Hardening surprise/claim rules → (most important privacy correctness step)
+## Note
+The current repo already has Firestore rules that require `request.auth != null` for delete.
+Without adding anonymous auth to the frontend, list deletion will fail.
 

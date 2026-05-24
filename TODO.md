@@ -1,16 +1,20 @@
 # TODO - Gift List (Firebase)
 
-## Plan steps
-- [x] Create repo structure + base frontend (index.html, list.html, assets/*)
-- [x] Add Firestore security rules file
-- [ ] Add project-local setup notes (already started in README)
-- [ ] Fix Firestore rules to correctly enforce surprise mode + claiming transitions (current rules are minimal)
-- [ ] Add missing Firebase config wiring (firebaseConfig.js placeholder already created)
-- [ ] Verify frontend imports work on the intended hosting (static server)
-- [ ] Run a quick local smoke test by serving files and ensuring JS loads
+## Fix list creation UI
+- [x] Correct Firebase config import in `index.html`
+- [x] Fix item creation call to use `addDoc`
+- [ ] After creating list, ensure the page renders the list or provides a copyable share link.
 
-## Remaining
-- Implement owner/surprise enforcement more strictly:
-  - Hide `claimedBy` + purchased status in surprise mode at the rules layer (not only UI)
-  - Ensure read permissions prevent leakage of purchased/claimedBy when `surpriseMode` is enabled
+## Deletion
+- [ ] Add UI delete buttons for lists (owner mode) and items.
+- [ ] Implement Firestore deletes (client).
+
+## Firebase rules
+- [ ] Allow item create (with required/optional fields policy).
+- [ ] Allow owner delete list + items only for authenticated ownerUid.
+- [ ] Keep claim transaction rules safe.
+
+## Field optionality (mandatory vs optional)
+- [ ] Items: require `name`; allow optional `price`, `link`, `notes`.
+- [ ] Ensure create/update rules enforce the above.
 
