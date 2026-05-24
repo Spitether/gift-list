@@ -2,10 +2,12 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-      // Lists metadata
+    // Lists metadata
     match /lists/{listId} {
       allow read: if true;
-      allow create: if request.resource.data.ownerName is string;
+      allow create: if request.resource.data.ownerName is string
+        && request.resource.data.title is string
+        && request.resource.data.surpriseMode is bool;
       allow update, delete: if false;
 
 
