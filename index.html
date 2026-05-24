@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gift List</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <h1>Gift List</h1>
+        <p>Create a wishlist and share it with friends.</p>
+      </div>
+      <div class="hint">Firebase + Firestore</div>
+    </header>
+
+    <div class="grid">
+      <div class="card">
+        <h2 style="margin:0 0 10px 0">Create your list</h2>
+        <div class="hint" style="margin-bottom:14px">
+          Add item name, link, price, and notes. Set <b>Surprise mode</b> to hide purchased details.
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Owner name</label>
+            <input id="ownerName" placeholder="e.g., Sarah" />
+          </div>
+          <div>
+            <label>List title</label>
+            <input id="listTitle" placeholder="e.g., Wedding gifts" />
+          </div>
+        </div>
+
+        <div style="margin-top:12px">
+          <label style="display:flex; align-items:center; gap:10px">
+            <input type="checkbox" id="surpriseMode" />
+            Surprise mode
+          </label>
+          <div class="hint">When enabled, claimers and purchased state are hidden.</div>
+        </div>
+
+        <div class="sep"></div>
+
+        <h3 style="margin:0 0 10px 0">Items</h3>
+        <div class="hint" style="margin-bottom:12px">Add a few items; you can edit later by updating Firestore.</div>
+
+        <div id="itemsForm" class="list"></div>
+
+        <div style="display:flex; gap:12px; margin-top:12px">
+          <button class="secondary" id="addItemBtn" type="button">+ Add item</button>
+          <button id="createListBtn" type="button">Create list</button>
+        </div>
+
+        <div id="toast" class="toast" style="display:none"></div>
+      </div>
+
+      <div class="card">
+        <h2 style="margin:0 0 10px 0">Share</h2>
+        <div class="hint" style="margin-bottom:10px">
+          After creating, you’ll get a link to share.
+        </div>
+        <label>Share link</label>
+        <input id="shareLink" readonly />
+        <div class="sep"></div>
+        <div class="hint">
+          Tip: open the list link in an incognito window to test claiming.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { firebaseConfig } from './assets/firebaseConfig.js';
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+    import { getFirestore, collection, addDoc, serverTimestamp, addDoc as addItemDoc } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const itemsForm = document.getElementById('itemsForm');
+    const addItemBtn = document.getElementById('addItemBtn');
+    const createListBtn = document.getElementById('createListBtn');
+    const toast = document.getElementById('toast');
+    const shareLink = document.getElementById('shareLink');
+
+    function setToast(message, kind){
+      toast.className = 'toast ' + (kind || '');
+      toast.textContent = message;
+      toast.style.display = message ? 'block' : 'none';
+    }
+
+    let idx = 0;
+    function addItemRow(){
+      const row = document.createElement('div');
+      row.className = 'item';
+      row.innerHTML = `
+        <div class="row">
+          <div>
+            <label>Item name</label>
+            <input name="name" placeholder="e.g., KitchenAid mixer" />
+          </div>
+          <div>
+            <label>Price</label>
+            <input name="price" placeholder="$250" />
+          </div>
+        </div>
+        <div class="row" style="margin-top:12px">
+          <div>
+            <label>Link</label>
+            <input name="link" placeholder="https://..." />
+          </div>
+        </div>
+        <div style="margin-top:12px">
+          <label>Notes</label>
+          <textarea name="notes" placeholder="Size, color, where to buy..."></textarea>
+        </div>
+      `;
+      itemsForm.appendChild(row);
+      idx++;
+    }
+
+    addItemBtn.addEventListener('click', addItemRow);
+
+    function getItemsFromForm(){
+      const rows = [...itemsForm.querySelectorAll('.item')];
+      return rows.map(r => {
+        const pick = (sel) => r.querySelector(`input[name="${sel}"]`)?.value || '';
+        const notes = r.querySelector('textarea[name="notes"]')?.value || '';
+        return {
+          name: pick('name'),
+          link: pick('link'),
+          price: pick('price'),
+          notes
+        };
+      });
+    }
+
+    createListBtn.addEventListener('click', async () => {
+      try {
+        setToast('', '');
+        const ownerName = document.getElementById('ownerName').value.trim() || 'Owner';
+        const listTitle = document.getElementById('listTitle').value.trim() || 'My Gift List';
+        const surpriseMode = document.getElementById('surpriseMode').checked;
+
+        const items = getItemsFromForm();
+
+        const listDoc = await addDoc(collection(db, 'lists'), {
+          ownerName,
+          title: listTitle,
+          surpriseMode,
+          createdAt: serverTimestamp(),
+        });
+
+        // Add items
+        const itemsCol = collection(db, 'lists', listDoc.id, 'items');
+        for (const it of items){
+          if (!String(it.name || '').trim()) continue;
+          await addItemDoc(itemsCol, {
+            ...it,
+            purchased: false,
+            claimedBy: null,
+            createdAt: serverTimestamp(),
+          });
+        }
+
+        const url = window.location.origin + window.location.pathname + `?list=${encodeURIComponent(listDoc.id)}&mode=owner`;
+        shareLink.value = url.replace('&mode=owner', '&mode=view');
+        setToast('List created! Opening share link...', 'ok');
+        window.open(url.replace('&mode=owner', '&mode=view'), '_blank');
+      } catch (e){
+        console.error(e);
+        setToast('Failed to create list. Check your Firebase config and Firestore rules.', 'err');
+      }
+    });
+
+    // Start with 2 items
+    addItemRow();
+    addItemRow();
+  </script>
+</body>
+</html>
+

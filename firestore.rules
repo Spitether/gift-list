@@ -1,0 +1,29 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Lists metadata
+    match /lists/{listId} {
+      allow read: if true;
+      allow write: if false; // keep simple for now; owner creation happens via client with admin rules in production
+
+      match /items/{itemId} {
+        allow read: if true;
+
+        // Claiming: only allow a transition from unclaimed -> claimed by the requester username.
+        // We rely on client to supply claimedBy, but we enforce that it happens only once.
+        allow update: if request.resource.data.purchased == true
+          && resource.data.purchased == false
+          && request.resource.data.claimedBy is string
+          && request.resource.data.name == resource.data.name
+          && request.resource.data.link == resource.data.link
+          && request.resource.data.price == resource.data.price
+          && request.resource.data.notes == resource.data.notes;
+
+        allow create: if false;
+        allow delete: if false;
+      }
+    }
+  }
+}
+

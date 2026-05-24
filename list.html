@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gift List</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <h1 id="listTitle">Gift List</h1>
+        <p><span id="ownerLabel" class="ghost">Owner</span> · <span id="surpriseBadge">Surprise mode</span></p>
+      </div>
+      <div class="hint">Claim items (no double-buy)</div>
+    </header>
+
+    <div class="grid">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px">
+          <div>
+            <h2 style="margin:0 0 8px 0">Items</h2>
+            <div id="surpriseNotice" class="hint"></div>
+          </div>
+          <div style="min-width:260px">
+            <label>Share link (view mode)</label>
+            <input id="shareLink" readonly />
+          </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <div id="items" class="list"></div>
+
+        <div id="toast" class="toast" style="display:none"></div>
+      </div>
+
+      <div class="card">
+        <h2 style="margin:0 0 10px 0">How claiming works</h2>
+        <div class="hint">
+          - Enter a username and press Claim.
+          - Firestore transaction ensures two people can’t claim the same item.
+          - In Surprise mode, claimers/purchased state stay hidden.
+        </div>
+        <div class="sep"></div>
+        <div class="hint">
+          Your URL looks like:<br/>
+          <code style="color:var(--accent)">?list=<id>&amp;mode=view</code>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import './assets/claim.js';
+    import { bootstrapListPage } from './assets/app.js';
+    bootstrapListPage();
+  </script>
+</body>
+</html>
+
