@@ -83,6 +83,10 @@ async function bootstrapListPage(){
   }
 
   const viewMode = getQueryParam('mode') || 'view'; // view|owner
+
+  // If ownerTools exists (owner delete controls), show them for owner mode.
+  // Additionally, allow owner controls to show immediately for list creator by
+  // switching into owner mode after auth.
   const ownerMode = viewMode === 'owner';
   const ownerToolsEl = el('ownerTools');
   if (ownerToolsEl) ownerToolsEl.style.display = ownerMode ? 'block' : 'none';
