@@ -6,14 +6,14 @@ import {
   collection,
   addDoc,
   doc,
-  getDoc,
   serverTimestamp,
-  setDoc,
   onSnapshot,
   orderBy,
   query,
   deleteDoc,
+  updateDoc
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -290,15 +290,72 @@ async function bootstrapListPage(){
       }
 
 
-      // Owner-only delete for items.
+      // Owner-only edit + delete for items.
       if (ownerMode) {
-        const deleteRow = document.createElement('div');
-        deleteRow.style.marginTop = '10px';
-        deleteRow.innerHTML = `
-          <button class="secondary" type="button" data-del-item="${itemId}">Delete item</button>
+        const ownerEditRow = document.createElement('div');
+        ownerEditRow.style.marginTop = '12px';
+        ownerEditRow.innerHTML = `
+          <div class="hint" style="margin-bottom:8px">Owner edit</div>
+          <div class="row" style="align-items:flex-start">
+            <div>
+              <label>Edit name</label>
+              <input data-edit-name="${itemId}" value="${escapeHtml(name)}" />
+            </div>
+            <div>
+              <label>Edit price</label>
+              <input data-edit-price="${itemId}" value="${escapeHtml(price)}" />
+            </div>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <div>
+              <label>Edit link</label>
+              <input data-edit-link="${itemId}" value="${escapeHtml(link)}" />
+            </div>
+          </div>
+          <div style="margin-top:10px">
+            <label>Edit notes</label>
+            <textarea data-edit-notes="${itemId}">${escapeHtml(notes)}</textarea>
+          </div>
+          <div class="row" style="margin-top:12px; align-items:center">
+            <button class="secondary" type="button" data-save-item="${itemId}">Save</button>
+            <button class="danger" type="button" data-del-item="${itemId}">Delete item</button>
+          </div>
+          <div id="toast" class="toast" style="display:none"></div>
         `;
-        bottom.appendChild(deleteRow);
+
+        bottom.appendChild(ownerEditRow);
+
+        ownerEditRow.querySelector('[data-save-item="' + itemId + '"]').addEventListener('click', async () => {
+          try {
+            const nameEl = ownerEditRow.querySelector('[data-edit-name="' + itemId + '"]');
+            const priceEl = ownerEditRow.querySelector('[data-edit-price="' + itemId + '"]');
+            const linkEl = ownerEditRow.querySelector('[data-edit-link="' + itemId + '"]');
+            const notesEl = ownerEditRow.querySelector('[data-edit-notes="' + itemId + '"]');
+
+            const next = {
+              name: String(nameEl.value || '').trim(),
+              ...(String(priceEl.value || '').trim() ? { price: String(priceEl.value).trim() } : {}),
+              ...(String(linkEl.value || '').trim() ? { link: String(linkEl.value).trim() } : {}),
+              ...(String(notesEl.value || '').trim() ? { notes: String(notesEl.value).trim() } : {}),
+            };
+
+            if (!next.name) {
+              setToast('Item name is required.', 'err');
+              return;
+            }
+
+            await updateDoc(doc(db, 'lists', listId, 'items', itemId), {
+              ...next,
+            });
+            setToast('Item updated.', 'ok');
+          } catch (e) {
+            console.error(e);
+            setToast('Could not save item.', 'err');
+          }
+        });
+
       }
+
 
       itemEl.appendChild(top);
       itemEl.appendChild(bottom);
