@@ -423,10 +423,14 @@ async function bootstrapListPage(){
       const btn = itemEl.querySelector('#claimBtn');
       if (btn) {
         const userInput = itemEl.querySelector('#username');
-        btn.addEventListener('click', () => {
-          window.__claimForItem && window.__claimForItem({listId, itemId, purchased, surpriseMode, btn, userInput});
+        btn.addEventListener('click', async () => {
+          // Re-read live state from the button snapshot to avoid stale closure values.
+          // Firestore will update and the onSnapshot listener will re-render the UI.
+          const freshPurchased = btn.disabled || purchased;
+          window.__claimForItem && window.__claimForItem({ listId, itemId, purchased: freshPurchased, surpriseMode, btn, userInput });
         });
       }
+
 
 
       // Owner delete handler
