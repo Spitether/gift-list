@@ -108,7 +108,11 @@ async function bootstrapListPage(){
   const ownerToolsEl = el('ownerTools');
   if (ownerToolsEl) ownerToolsEl.style.display = ownerMode ? 'block' : 'none';
 
-  el('shareLink').value = window.location.origin + window.location.pathname.replace(/\/+$/,'') + `list.html?list=${encodeURIComponent(listId)}&mode=view`;
+  // Share link must match Firebase Hosting rewrites:
+  // - /l/<id> -> rewrites to /list.html
+  // - list.html then reads listId from query (?list=) in bootstrapListPage.
+  el('shareLink').value = window.location.origin + `/l/${encodeURIComponent(listId)}?mode=view&list=${encodeURIComponent(listId)}`;
+
 
 
   const listDocRef = doc(db, 'lists', listId);
