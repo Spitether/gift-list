@@ -277,7 +277,7 @@ async function bootstrapListPage(){
       // Always show that an item is claimed/purchased.
       // In surprise mode we hide the claimer name, but the “Claimed” indicator should remain visible.
       const showPurchased = purchased;
-      const showClaimedBy = purchased && !surpriseMode && claimedBy && !ownerMode;
+      const showClaimedBy = purchased && !surpriseMode && claimedBy && getQueryParam('mode') !== 'owner';
 
 
 
