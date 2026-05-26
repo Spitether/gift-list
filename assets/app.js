@@ -307,11 +307,15 @@ async function bootstrapListPage(){
 
 
       // Hook claim button for this item
+      // Hook claim button for this item (only exists in view mode).
       const btn = itemEl.querySelector('#claimBtn');
-      const userInput = itemEl.querySelector('#username');
-      btn.addEventListener('click', () => {
-        window.__claimForItem && window.__claimForItem({listId, itemId, purchased, surpriseMode, btn, userInput});
-      });
+      if (btn) {
+        const userInput = itemEl.querySelector('#username');
+        btn.addEventListener('click', () => {
+          window.__claimForItem && window.__claimForItem({listId, itemId, purchased, surpriseMode, btn, userInput});
+        });
+      }
+
 
       // Owner delete handler
       const delBtn = itemEl.querySelector('[data-del-item="' + itemId + '"]');
@@ -337,11 +341,11 @@ async function bootstrapListPage(){
     delListBtn.disabled = !(ownerMode && currentUid && ownerUid && currentUid === ownerUid);
     delListBtn.style.cursor = delListBtn.disabled ? 'not-allowed' : 'pointer';
     delListBtn.addEventListener('click', async () => {
-      const ok = confirm('Delete this entire list? This cannot be undone.');
-      if (!ok) return;
+      const typed = prompt('Type DELETE to confirm deleting the entire list. This cannot be undone.');
+      if (!typed || typed.trim().toUpperCase() !== 'DELETE') return;
       try {
         // Delete items first
-        const { getDocs, getDocsFrom } = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js');
+        const { getDocs } = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js');
         const itemsSnap = await getDocs(query(collection(db, 'lists', listId, 'items')));
         for (const d of itemsSnap.docs) {
           await deleteDoc(doc(db, 'lists', listId, 'items', d.id));
@@ -355,6 +359,7 @@ async function bootstrapListPage(){
       }
     });
   }
+
 
   // Expose basic metadata
   window.__giftList = { listId, ownerMode, surpriseModeRef: () => surpriseMode, listTitle, ownerUidRef: () => ownerUid };
