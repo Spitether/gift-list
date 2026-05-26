@@ -209,9 +209,9 @@ function setToast(message, kind){
 
         }
 
-const url = window.location.origin + window.location.pathname.replace(/\/$/,'') + `/l/${encodeURIComponent(listDoc.id)}`;
+const url = window.location.href.replace(/\/$/,'') + `?list=${encodeURIComponent(listDoc.id)}&mode=owner`;
 shareLink.value = url;
-        // Show share link immediately on this page too
+        // Stay on this page; just open the list in a new tab
         window.open(url, '_blank');
         setToast('List created! Share link ready.', 'ok');
       } catch (e){
