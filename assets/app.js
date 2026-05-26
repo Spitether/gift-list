@@ -214,10 +214,14 @@ async function bootstrapListPage(){
       const claimedBy = data.claimedBy || null;
 
       // UI privacy logic:
-      // - if surpriseMode: show no purchased status and no claimedBy
-      // - else: show purchased status and claimedBy
-      const showPurchased = !surpriseMode && purchased;
-      const showClaimedBy = !surpriseMode && purchased && claimedBy;
+      // In Surprise mode:
+      // - viewers should see items are claimed
+      // - owner should NOT see claim/purchased details
+      const showPurchased = !surpriseMode || !ownerMode;
+      const showClaimedBy = (!surpriseMode || !ownerMode) && purchased && claimedBy;
+
+
+
 
       const itemEl = document.createElement('div');
       itemEl.className = 'item';
