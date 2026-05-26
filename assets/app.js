@@ -107,7 +107,8 @@ async function bootstrapListPage(){
 
 
 
-  const viewMode = getQueryParam('mode') || 'view'; // view|owner (owner optional; path links default to view)
+  const viewMode = (getQueryParam('mode') || 'view').toLowerCase(); // view|owner (owner optional; path links default to view)
+
 
   // debugState block above uses viewMode
 
