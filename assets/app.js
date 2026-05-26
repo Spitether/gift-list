@@ -318,9 +318,13 @@ async function bootstrapListPage(){
       if (showPurchased){
         const tag = document.createElement('span');
         tag.className = 'claimedTag';
-        tag.textContent = showClaimedBy ? `Claimed by ${escapeHtml(claimedBy)}` : 'Claimed';
+        // If purchased is true but claimedBy is missing/null, still show as claimed.
+        tag.textContent = (showClaimedBy && claimedBy)
+          ? `Claimed by ${escapeHtml(claimedBy)}`
+          : 'Claimed';
         right.appendChild(tag);
       }
+
 
       top.appendChild(left);
       top.appendChild(right);
@@ -418,18 +422,32 @@ async function bootstrapListPage(){
       wrap.appendChild(itemEl);
 
 
-      // Hook claim button for this item
       // Hook claim button for this item (only exists in view mode).
       const btn = itemEl.querySelector('#claimBtn');
       if (btn) {
         const userInput = itemEl.querySelector('#username');
         btn.addEventListener('click', async () => {
-          // Re-read live state from the button snapshot to avoid stale closure values.
-          // Firestore will update and the onSnapshot listener will re-render the UI.
-          const freshPurchased = btn.disabled || purchased;
-          window.__claimForItem && window.__claimForItem({ listId, itemId, purchased: freshPurchased, surpriseMode, btn, userInput });
+          // Force a re-render by removing and reloading the UI after claim.
+          // This avoids edge-cases where the items onSnapshot listener isn't updating the DOM.
+          try {
+            btn.disabled = true;
+            const res = await (window.__claimForItem && window.__claimForItem({
+              listId,
+              itemId,
+              purchased: btn.disabled || purchased,
+              surpriseMode,
+              btn,
+              userInput,
+            }));
+          } finally {
+            // Hard refresh to reflect Firestore change reliably.
+            // (keeps current mode via query string)
+            const url = new URL(window.location.href);
+            window.location.replace(url.toString());
+          }
         });
       }
+
 
 
 
