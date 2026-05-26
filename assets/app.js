@@ -280,7 +280,13 @@ async function bootstrapListPage(){
       // - Owner mode + surprise mode: hide claimer identity
       // - Viewer mode + surprise mode: show claimer identity
       const showPurchased = purchased;
+      // In Surprise mode, owner should not see who claimed.
+      // In viewer mode, they should see who claimed.
       const showClaimedBy = purchased && claimedBy && (!surpriseMode || !ownerMode);
+
+      // If owner + surprise mode: always render generic "Claimed" (no name).
+      const claimedLabel = showClaimedBy && claimedBy ? `Claimed by ${escapeHtml(claimedBy)}` : 'Claimed';
+
 
 
 
@@ -328,9 +334,8 @@ async function bootstrapListPage(){
         const tag = document.createElement('span');
         tag.className = 'claimedTag';
         // If purchased is true but claimedBy is missing/null, still show as claimed.
-        tag.textContent = (showClaimedBy && claimedBy)
-          ? `Claimed by ${escapeHtml(claimedBy)}`
-          : 'Claimed';
+        tag.textContent = claimedLabel;
+
         right.appendChild(tag);
       }
 
