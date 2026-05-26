@@ -203,6 +203,18 @@ async function bootstrapListPage(){
     const wrap = el('items');
     wrap.innerHTML = '';
 
+    // DEBUG: show live purchased/claimedBy values (temporary)
+    const debug = el('debugState');
+    if (debug) {
+      debug.style.display = 'block';
+      debug.innerHTML = `DEBUG (items snapshot):<br/>` +
+        snap.docs.slice(0, 20).map(d => {
+          const data = d.data();
+          return `${d.id}: purchased=${String(data?.purchased)} claimedBy=${String(data?.claimedBy)}`;
+        }).join('<br/>');
+    }
+
+
     if (snap.empty){
       wrap.innerHTML = '<div class="hint">No items yet.</div>';
       return;
@@ -340,8 +352,8 @@ async function bootstrapListPage(){
         claimArea.innerHTML = `
           <div class="hint" style="margin-bottom:8px">Claim with your username:</div>
           <div class="row" style="align-items:center">
-            <input id="username" placeholder="Your username" value="" />
-            <button id="claimBtn" data-item="${itemId}" ${purchased && !surpriseMode ? 'disabled' : ''}>Claim</button>
+            <input class="usernameInput" placeholder="Your username" value="" />
+            <button class="claimBtn" data-item="${itemId}" ${purchased && !surpriseMode ? 'disabled' : ''}>Claim</button>
           </div>
         `;
 
@@ -423,9 +435,9 @@ async function bootstrapListPage(){
 
 
       // Hook claim button for this item (only exists in view mode).
-      const btn = itemEl.querySelector('#claimBtn');
+      const btn = itemEl.querySelector('.claimBtn');
       if (btn) {
-        const userInput = itemEl.querySelector('#username');
+        const userInput = itemEl.querySelector('.usernameInput');
         btn.addEventListener('click', async () => {
           // Force a re-render by removing and reloading the UI after claim.
           // This avoids edge-cases where the items onSnapshot listener isn't updating the DOM.
