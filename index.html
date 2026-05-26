@@ -169,13 +169,21 @@ function setToast(message, kind){
 
         const items = getItemsFromForm();
 
-        const listDoc = await addDoc(collection(db, 'lists'), {
-          ownerUid: auth.currentUser.uid,
-          ownerName,
-          title: listTitle,
-          surpriseMode,
-          createdAt: serverTimestamp(),
-        });
+        let listDoc;
+        try {
+          listDoc = await addDoc(collection(db, 'lists'), {
+            ownerUid: auth.currentUser.uid,
+            ownerName,
+            title: listTitle,
+            surpriseMode,
+            createdAt: serverTimestamp(),
+          });
+        } catch (e) {
+          console.error('LIST DOC WRITE FAILED', e);
+          setToast('Permission denied while creating list.', 'err');
+          throw e;
+        }
+
 
         // Add items
         const itemsCol = collection(db, 'lists', listDoc.id, 'items');
@@ -192,7 +200,13 @@ function setToast(message, kind){
             claimedBy: null,
             createdAt: serverTimestamp(),
           };
-          await addDoc(itemsCol, payload);
+          try {
+            await addDoc(itemsCol, payload);
+          } catch (e) {
+            console.error('ITEM WRITE FAILED', e, { payload });
+            throw e;
+          }
+
         }
 
 const url = window.location.origin + window.location.pathname.replace(/\/$/,'') + `/l/${encodeURIComponent(listDoc.id)}`;

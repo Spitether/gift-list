@@ -8,19 +8,28 @@ service cloud.firestore {
       allow read: if true;
 
       // Dev mode: allow anonymous creation of list metadata
+      // Allow extra fields like createdAt.
       allow create: if request.auth == null
         && request.resource.data.ownerUid is string
         && request.resource.data.ownerName is string
         && request.resource.data.title is string
-        && request.resource.data.surpriseMode is bool;
+        && request.resource.data.surpriseMode is bool
+        && ('createdAt' in request.resource.data);
+
+
 
       // Also allow authenticated owners (Anonymous sign-in counts as authenticated)
+      // Allow extra fields like createdAt.
       allow create: if request.auth != null
         && request.resource.data.ownerUid is string
         && request.resource.data.ownerUid == request.auth.uid
         && request.resource.data.ownerName is string
         && request.resource.data.title is string
-        && request.resource.data.surpriseMode is bool;
+        && request.resource.data.surpriseMode is bool
+        && ('createdAt' in request.resource.data);
+
+
+
 
       allow update: if request.auth != null
         && request.resource.data.ownerUid is string

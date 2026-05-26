@@ -89,8 +89,10 @@ async function bootstrapListPage(){
   // Support both old query-string URLs (?list=<id>&mode=view) and
   // new Firebase Hosting rewrites where listId is in the path (/l/<id>). 
   const listIdFromQuery = getQueryParam('list');
+  // Prefer query-string; if missing, also support old rewrites like /l/<id>.
   const pathMatch = window.location.pathname.match(/\/l\/(.+?)(?:\/|$)/);
   const listId = listIdFromQuery || (pathMatch ? decodeURIComponent(pathMatch[1]) : null);
+
   if (!listId) {
     setToast('Missing list id in URL.', 'err');
     return;
@@ -105,7 +107,8 @@ async function bootstrapListPage(){
   const ownerToolsEl = el('ownerTools');
   if (ownerToolsEl) ownerToolsEl.style.display = ownerMode ? 'block' : 'none';
 
-  el('shareLink').value = window.location.origin + window.location.pathname.replace(/\/+$/,'') + `/l/${encodeURIComponent(listId)}`;
+  el('shareLink').value = window.location.origin + window.location.pathname.replace(/\/+$/,'') + `list.html?list=${encodeURIComponent(listId)}&mode=view`;
+
 
   const listDocRef = doc(db, 'lists', listId);
 
