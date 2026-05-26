@@ -5,7 +5,13 @@ service cloud.firestore {
     // Lists metadata
     match /lists/{listId} {
       allow read: if true;
-      allow create: if request.resource.data.ownerUid is string
+
+      // Allow owners to create lists.
+      // Client writes: ownerUid, ownerName, title, surpriseMode, createdAt.
+      // We validate required fields, but we do NOT restrict extra fields like createdAt.
+      allow create: if request.auth != null
+        && request.resource.data.ownerUid is string
+        && request.resource.data.ownerUid == request.auth.uid
         && request.resource.data.ownerName is string
         && request.resource.data.title is string
         && request.resource.data.surpriseMode is bool;
@@ -13,33 +19,33 @@ service cloud.firestore {
       allow update: if request.auth != null && request.auth.uid == resource.data.ownerUid;
       allow delete: if request.auth != null && request.auth.uid == resource.data.ownerUid;
 
-
+      // Items
       match /items/{itemId} {
         allow read: if true;
 
         // Deleting: only list owner can delete items.
-        allow delete: if request.auth != null && request.auth.uid == get(/databases/$(database)/documents/lists/$(listId)).data.ownerUid;
+        allow delete: if request.auth != null
+          && request.auth.uid == get(/databases/$(database)/documents/lists/$(listId)).data.ownerUid;
 
         // Create items: mandatory `name`, optional `price`, `link`, `notes`.
-        // Firestore doesn't allow open-ended unknown fields in these rules, so we enforce types.
         allow create: if request.auth != null
           && request.resource.data.name is string
-          && (request.resource.data.price is string || !("price" in request.resource.data))
-          && (request.resource.data.link is string || !("link" in request.resource.data))
-          && (request.resource.data.notes is string || !("notes" in request.resource.data))
+          && (request.resource.data.price is string || !('price' in request.resource.data))
+          && (request.resource.data.link is string || !('link' in request.resource.data))
+          && (request.resource.data.notes is string || !('notes' in request.resource.data))
           && request.resource.data.purchased is bool
           && request.resource.data.claimedBy == null
           && request.resource.data.claimedAt == null;
 
         // Claiming: only allow a transition from unclaimed -> claimed.
+        // Relax optional-field equality checks (link/price/notes) because they may be missing/omitted
+        // depending on how the client updates.
         allow update: if request.resource.data.purchased == true
           && resource.data.purchased == false
           && request.resource.data.claimedBy is string
           && request.resource.data.claimedAt is number
-          && request.resource.data.name == resource.data.name
-          && request.resource.data.link == resource.data.link
-          && request.resource.data.price == resource.data.price
-          && request.resource.data.notes == resource.data.notes;
+          // Prevent re-claim changing identity of the item.
+          && request.resource.data.name == resource.data.name;
       }
     }
   }

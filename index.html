@@ -87,8 +87,17 @@ import { getFirestore, collection, addDoc, serverTimestamp } from 'https://www.g
 
     async function ensureAuth(){
       if (auth.currentUser) return auth.currentUser;
-      const res = await signInAnonymously(auth);
-      return res.user;
+      try {
+        const res = await signInAnonymously(auth);
+        return res.user;
+      } catch (e) {
+        console.error(e);
+        setToast(
+          'Auth misconfigured: enable Firebase Authentication → Anonymous sign-in in the Firebase Console.',
+          'err'
+        );
+        throw e;
+      }
     }
 
 
@@ -98,7 +107,7 @@ import { getFirestore, collection, addDoc, serverTimestamp } from 'https://www.g
     const toast = document.getElementById('toast');
     const shareLink = document.getElementById('shareLink');
 
-    function setToast(message, kind){
+function setToast(message, kind){
       toast.className = 'toast ' + (kind || '');
       toast.textContent = message;
       toast.style.display = message ? 'block' : 'none';
@@ -186,12 +195,10 @@ import { getFirestore, collection, addDoc, serverTimestamp } from 'https://www.g
           await addDoc(itemsCol, payload);
         }
 
-        const url = window.location.origin + window.location.pathname + `?list=${encodeURIComponent(listDoc.id)}&mode=owner`;
-        shareLink.value = url.replace('&mode=owner', '&mode=view');
+const url = window.location.origin + window.location.pathname.replace(/\/$/,'') + `/l/${encodeURIComponent(listDoc.id)}`;
+shareLink.value = url;
         // Show share link immediately on this page too
-        const shareViewUrl = url.replace('&mode=owner', '&mode=view');
-        shareLink.value = shareViewUrl;
-        window.open(shareViewUrl, '_blank');
+        window.open(url, '_blank');
         setToast('List created! Share link ready.', 'ok');
       } catch (e){
         console.error(e);

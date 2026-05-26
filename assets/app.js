@@ -31,12 +31,22 @@ function setToast(message, kind){
   t.style.display = message ? 'block' : 'none';
 }
 
-async function createList({ownerName, listTitle, surpriseMode}){
+async function createList({ownerName, listTitle, surpriseMode}) {
+  const { getAuth, signInAnonymously } = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js');
+  const auth = getAuth();
+
+  if (!auth.currentUser) {
+    await signInAnonymously(auth);
+  }
+
+  const uid = auth.currentUser.uid;
+
   const list = {
     ownerName: ownerName || 'Owner',
     title: listTitle || 'My Gift List',
     surpriseMode: !!surpriseMode,
     createdAt: serverTimestamp(),
+    ownerUid: uid,
   };
 
   const docRef = await addDoc(collection(db, 'lists'), list);
@@ -76,13 +86,17 @@ async function addItemsToList({listId, items}){
 }
 
 async function bootstrapListPage(){
-  const listId = getQueryParam('list');
+  // Support both old query-string URLs (?list=<id>&mode=view) and
+  // new Firebase Hosting rewrites where listId is in the path (/l/<id>). 
+  const listIdFromQuery = getQueryParam('list');
+  const pathMatch = window.location.pathname.match(/\/l\/(.+?)(?:\/|$)/);
+  const listId = listIdFromQuery || (pathMatch ? decodeURIComponent(pathMatch[1]) : null);
   if (!listId) {
     setToast('Missing list id in URL.', 'err');
     return;
   }
 
-  const viewMode = getQueryParam('mode') || 'view'; // view|owner
+  const viewMode = getQueryParam('mode') || 'view'; // view|owner (owner optional; path links default to view)
 
   // If ownerTools exists (owner delete controls), show them for owner mode.
   // Additionally, allow owner controls to show immediately for list creator by
@@ -91,7 +105,7 @@ async function bootstrapListPage(){
   const ownerToolsEl = el('ownerTools');
   if (ownerToolsEl) ownerToolsEl.style.display = ownerMode ? 'block' : 'none';
 
-  el('shareLink').value = window.location.origin + window.location.pathname + `?list=${encodeURIComponent(listId)}&mode=view`;
+  el('shareLink').value = window.location.origin + window.location.pathname.replace(/\/+$/,'') + `/l/${encodeURIComponent(listId)}`;
 
   const listDocRef = doc(db, 'lists', listId);
 
@@ -109,11 +123,17 @@ async function bootstrapListPage(){
     }
   } catch (e) {
     console.warn('Auth init failed:', e);
+    // Most common cause: Anonymous sign-in is not enabled in Firebase Console.
+    setToast(
+      'Auth misconfigured: enable Firebase Authentication → Anonymous sign-in in the Firebase Console.',
+      'err'
+    );
   }
 
 
 
-  const itemsQ = query(collection(db, 'lists', listId, 'items'), orderBy('createdAt', 'asc'));
+  // Don’t rely on createdAt always existing for every item.
+  const itemsQ = query(collection(db, 'lists', listId, 'items'));
 
   let surpriseMode = false;
   let listTitle = '';
