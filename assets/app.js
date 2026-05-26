@@ -187,8 +187,9 @@ async function bootstrapListPage(){
       // If surprise mode is ON, hide purchased/claimer info ONLY for viewers.
       // Owners should still see who claimed (requested behavior).
       el('surpriseNotice').textContent = surpriseMode
-        ? 'Owner cannot see what was purchased (claimers hidden).'
+        ? (ownerMode ? 'Owner cannot see who claimed (hidden in surprise mode).' : 'Surprise mode: claimers are shown to viewers.')
         : 'Owner can see purchases.';
+
   });
 
   // Owner-only: Add item form (inline)
@@ -273,11 +274,13 @@ async function bootstrapListPage(){
       const claimedBy = data.claimedBy || null;
 
       // UI: purchased/claimedBy should reflect real Firestore state.
-      // (Surprise mode hides claimers regardless of who is viewing.)
       // Always show that an item is claimed/purchased.
-      // In surprise mode we hide the claimer name, but the “Claimed” indicator should remain visible.
+      // Privacy rules:
+      // - Owner mode + surprise mode: hide claimer identity
+      // - Viewer mode + surprise mode: show claimer identity
       const showPurchased = purchased;
-      const showClaimedBy = purchased && !surpriseMode && claimedBy && getQueryParam('mode') !== 'owner';
+      const showClaimedBy = purchased && claimedBy && (!surpriseMode || !ownerMode);
+
 
 
 
