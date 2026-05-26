@@ -269,12 +269,11 @@ async function bootstrapListPage(){
       const purchased = !!data.purchased;
       const claimedBy = data.claimedBy || null;
 
-      // UI privacy logic:
-      // In Surprise mode:
-      // - viewers should see items are claimed
-      // - owner should NOT see claim/purchased details
-      const showPurchased = !surpriseMode || !ownerMode;
-      const showClaimedBy = (!surpriseMode || !ownerMode) && purchased && claimedBy;
+      // UI: purchased/claimedBy should reflect real Firestore state.
+      // (Surprise mode hides claimers regardless of who is viewing.)
+      const showPurchased = (!surpriseMode) && purchased;
+      const showClaimedBy = (!surpriseMode) && purchased && claimedBy;
+
 
 
 
