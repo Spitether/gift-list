@@ -99,7 +99,18 @@ async function bootstrapListPage(){
     return;
   }
 
+  const debugStateEl = el('debugState');
+  if (debugStateEl) {
+    debugStateEl.style.display = 'block';
+    debugStateEl.textContent = `URL: ${window.location.href}\nlistId: ${listId}\nmode: ${getQueryParam('mode') || 'view'}`;
+  }
+
+
+
   const viewMode = getQueryParam('mode') || 'view'; // view|owner (owner optional; path links default to view)
+
+  // debugState block above uses viewMode
+
 
   // If ownerTools exists (owner delete controls), show them for owner mode.
   // Additionally, allow owner controls to show immediately for list creator by

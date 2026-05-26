@@ -37,7 +37,9 @@
         <div id="items" class="list"></div>
 
         <div id="toast" class="toast" style="display:none"></div>
+        <div id="debugState" class="hint" style="margin-top:8px; display:none; white-space:pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;"></div>
       </div>
+
 
       <div class="card">
         <h2 style="margin:0 0 10px 0">How claiming works</h2>
@@ -47,10 +49,12 @@
           - In Surprise mode, claimers/purchased state stay hidden.
         </div>
         <div class="sep"></div>
-        <div class="hint">
+    <div class="hint">
           Your URL looks like:<br/>
           <code style="color:var(--accent)">?list=<id>&amp;mode=view</code>
         </div>
+
+        <div class="hint" id="debugUrl" style="margin-top:8px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; white-space: pre-wrap; display:none"></div>
       </div>
     </div>
   </div>
