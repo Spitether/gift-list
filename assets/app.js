@@ -184,11 +184,12 @@ async function bootstrapListPage(){
       ownerTools.style.display = currentUid && ownerUid && currentUid === ownerUid ? 'block' : 'none';
     }
 
-    // If surprise mode is ON, hide purchased/claimer info for everyone (including owner).
-    // The UI can still show “Claim” buttons for unclaimed items.
-    el('surpriseNotice').textContent = surpriseMode
-      ? 'Owner cannot see what was purchased (claimers hidden).'
-      : 'Owner can see purchases.';
+      // If surprise mode is ON, hide purchased/claimer info ONLY for viewers.
+      // Owners should still see who claimed (requested behavior).
+      el('surpriseNotice').textContent = surpriseMode
+        ? (ownerMode ? 'Surprise mode ON (owner still sees claimers).'
+                     : 'Owner cannot see what was purchased (claimers hidden).')
+        : 'Owner can see purchases.';
   });
 
   // Owner-only: Add item form (inline)
