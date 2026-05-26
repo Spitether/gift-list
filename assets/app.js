@@ -274,8 +274,10 @@ async function bootstrapListPage(){
 
       // UI: purchased/claimedBy should reflect real Firestore state.
       // (Surprise mode hides claimers regardless of who is viewing.)
-      const showPurchased = (!surpriseMode) && purchased;
-      const showClaimedBy = (!surpriseMode) && purchased && claimedBy;
+      // Always show that an item is claimed/purchased.
+      // In surprise mode we hide the claimer name, but the “Claimed” indicator should remain visible.
+      const showPurchased = purchased;
+      const showClaimedBy = purchased && (!surpriseMode) && claimedBy;
 
 
 
