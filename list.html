@@ -37,7 +37,37 @@
         <div id="items" class="list"></div>
 
         <div id="toast" class="toast" style="display:none"></div>
-        <div id="debugState" class="hint" style="margin-top:8px; display:none; white-space:pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;"></div>
+          <div id="debugState" class="hint" style="margin-top:8px; display:none; white-space:pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;"></div>
+
+        <div id="ownerAddItem" style="display:none; margin-top:14px;">
+          <div class="sep"></div>
+          <h3 style="margin:0 0 10px 0; font-size:16px">Add item</h3>
+          <div class="row">
+            <div>
+              <label>Name</label>
+              <input id="addName" placeholder="e.g., KitchenAid mixer" />
+            </div>
+            <div>
+              <label>Price (optional)</label>
+              <input id="addPrice" placeholder="$250" />
+            </div>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <div>
+              <label>Link (optional)</label>
+              <input id="addLink" placeholder="https://..." />
+            </div>
+          </div>
+          <div style="margin-top:10px">
+            <label>Notes (optional)</label>
+            <textarea id="addNotes" placeholder="Size, color, where to buy..."></textarea>
+          </div>
+          <div style="display:flex; gap:12px; margin-top:12px; align-items:center">
+            <button class="secondary" id="addItemReset" type="button">Reset</button>
+            <button id="addItemSave" type="button">+ Save item</button>
+          </div>
+        </div>
+
       </div>
 
 

@@ -191,8 +191,15 @@ async function bootstrapListPage(){
       : 'Owner can see purchases.';
   });
 
+  // Owner-only: Add item form (inline)
+  const addItemWrap = ownerMode ? document.getElementById('ownerAddItem') : null;
+  if (addItemWrap && ownerMode) {
+    // no-op: container will be managed per snapshot below (so it stays visible)
+  }
+
   // Listen items
   const itemsUnsub = onSnapshot(itemsQ, (snap) => {
+
     const wrap = el('items');
     wrap.innerHTML = '';
 
@@ -200,6 +207,55 @@ async function bootstrapListPage(){
       wrap.innerHTML = '<div class="hint">No items yet.</div>';
       return;
     }
+
+    // Owner add item visibility + handlers (wired once, but safe to call repeatedly)
+    const ownerAddItem = el('ownerAddItem');
+    if (ownerAddItem && ownerMode) ownerAddItem.style.display = 'block';
+
+    const addItemSaveBtn = el('addItemSave');
+    const addItemResetBtn = el('addItemReset');
+    if (ownerMode && ownerAddItem && addItemSaveBtn && addItemResetBtn && !addItemSaveBtn.dataset.bound){
+      addItemSaveBtn.dataset.bound = '1';
+      addItemSaveBtn.addEventListener('click', async () => {
+        try {
+          addItemSaveBtn.disabled = true;
+          const name = (el('addName').value || '').trim();
+          const price = (el('addPrice').value || '').trim();
+          const link = (el('addLink').value || '').trim();
+          const notes = (el('addNotes').value || '').trim();
+          if (!name) {
+            setToast('Item name is required.', 'err');
+            return;
+          }
+
+          const payload = {
+            name,
+            ...(link ? { link } : {}),
+            ...(price ? { price } : {}),
+            ...(notes ? { notes } : {}),
+            purchased: false,
+            claimedBy: null,
+            createdAt: serverTimestamp(),
+          };
+
+          await addDoc(collection(db, 'lists', listId, 'items'), payload);
+          setToast('Item added.', 'ok');
+        } catch (e){
+          console.error(e);
+          setToast('Could not add item (owner permissions?).', 'err');
+        } finally {
+          addItemSaveBtn.disabled = false;
+        }
+      });
+
+      addItemResetBtn.addEventListener('click', () => {
+        el('addName').value = '';
+        el('addPrice').value = '';
+        el('addLink').value = '';
+        el('addNotes').value = '';
+      });
+    }
+
 
     for (const d of snap.docs){
       const itemId = d.id;
