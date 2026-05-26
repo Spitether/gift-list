@@ -203,16 +203,7 @@ async function bootstrapListPage(){
     const wrap = el('items');
     wrap.innerHTML = '';
 
-    // DEBUG: show live purchased/claimedBy values (temporary)
-    const debug = el('debugState');
-    if (debug) {
-      debug.style.display = 'block';
-      debug.innerHTML = `DEBUG (items snapshot):<br/>` +
-        snap.docs.slice(0, 20).map(d => {
-          const data = d.data();
-          return `${d.id}: purchased=${String(data?.purchased)} claimedBy=${String(data?.claimedBy)}`;
-        }).join('<br/>');
-    }
+
 
 
     if (snap.empty){
