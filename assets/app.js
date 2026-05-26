@@ -187,8 +187,7 @@ async function bootstrapListPage(){
       // If surprise mode is ON, hide purchased/claimer info ONLY for viewers.
       // Owners should still see who claimed (requested behavior).
       el('surpriseNotice').textContent = surpriseMode
-        ? (ownerMode ? 'Surprise mode ON (owner still sees claimers).'
-                     : 'Owner cannot see what was purchased (claimers hidden).')
+        ? 'Owner cannot see what was purchased (claimers hidden).'
         : 'Owner can see purchases.';
   });
 
@@ -278,7 +277,7 @@ async function bootstrapListPage(){
       // Always show that an item is claimed/purchased.
       // In surprise mode we hide the claimer name, but the “Claimed” indicator should remain visible.
       const showPurchased = purchased;
-      const showClaimedBy = purchased && (!surpriseMode) && claimedBy && !ownerMode;
+      const showClaimedBy = purchased && !surpriseMode && claimedBy && !ownerMode;
 
 
 
