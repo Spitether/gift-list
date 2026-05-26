@@ -431,30 +431,29 @@ async function bootstrapListPage(){
 
 
       // Hook claim button for this item (only exists in view mode).
-      const btn = itemEl.querySelector('.claimBtn');
-      if (btn) {
-        const userInput = itemEl.querySelector('.usernameInput');
-        btn.addEventListener('click', async () => {
-          // Force a re-render by removing and reloading the UI after claim.
-          // This avoids edge-cases where the items onSnapshot listener isn't updating the DOM.
-          try {
-            btn.disabled = true;
-            const res = await (window.__claimForItem && window.__claimForItem({
-              listId,
-              itemId,
-              purchased: btn.disabled || purchased,
-              surpriseMode,
-              btn,
-              userInput,
-            }));
-          } finally {
-            // Hard refresh to reflect Firestore change reliably.
-            // (keeps current mode via query string)
-            const url = new URL(window.location.href);
-            window.location.replace(url.toString());
-          }
-        });
+      if (!ownerMode) {
+        const btn = itemEl.querySelector('.claimBtn');
+        if (btn) {
+          const userInput = itemEl.querySelector('.usernameInput');
+          btn.addEventListener('click', async () => {
+            try {
+              btn.disabled = true;
+              await (window.__claimForItem && window.__claimForItem({
+                listId,
+                itemId,
+                purchased: btn.disabled || purchased,
+                surpriseMode,
+                btn,
+                userInput,
+              }));
+            } finally {
+              const url = new URL(window.location.href);
+              window.location.replace(url.toString());
+            }
+          });
+        }
       }
+
 
 
 
