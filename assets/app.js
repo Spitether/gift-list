@@ -273,17 +273,22 @@ async function bootstrapListPage(){
       const bottom = document.createElement('div');
       bottom.className = 'ghost';
 
-      const claimArea = document.createElement('div');
-      claimArea.style.marginTop = '12px';
-      claimArea.innerHTML = `
-        <div class="hint" style="margin-bottom:8px">Claim with your username:</div>
-        <div class="row" style="align-items:center">
-          <input id="username" placeholder="Your username" value="" />
-          <button id="claimBtn" data-item="${itemId}" ${purchased && !surpriseMode ? 'disabled' : ''}>Claim</button>
-        </div>
-      `;
+      // Owner doesn’t need to claim their own items (and shouldn’t see claim UI).
+      // Viewers can still claim in both modes.
+      if (!ownerMode) {
+        const claimArea = document.createElement('div');
+        claimArea.style.marginTop = '12px';
+        claimArea.innerHTML = `
+          <div class="hint" style="margin-bottom:8px">Claim with your username:</div>
+          <div class="row" style="align-items:center">
+            <input id="username" placeholder="Your username" value="" />
+            <button id="claimBtn" data-item="${itemId}" ${purchased && !surpriseMode ? 'disabled' : ''}>Claim</button>
+          </div>
+        `;
 
-      bottom.appendChild(claimArea);
+        bottom.appendChild(claimArea);
+      }
+
 
       // Owner-only delete for items.
       if (ownerMode) {
