@@ -111,7 +111,10 @@ async function bootstrapListPage(){
   // Share link must match Firebase Hosting rewrites:
   // - /l/<id> -> rewrites to /list.html
   // - list.html then reads listId from query (?list=) in bootstrapListPage.
-  el('shareLink').value = window.location.origin + `/l/${encodeURIComponent(listId)}?mode=view&list=${encodeURIComponent(listId)}`;
+  // Use explicit query-string URL so it works even when hosting rewrites aren’t involved.
+  // `firebase.json` rewrites only `/l/**` -> `/list.html`, but bootstrap reads `?list=`.
+  el('shareLink').value = window.location.origin + `/list.html?list=${encodeURIComponent(listId)}&mode=view`;
+
 
 
 
